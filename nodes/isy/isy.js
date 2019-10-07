@@ -107,11 +107,12 @@ var ISY = function (controller_node, address, username, password, useHttps) {
             isy.handleWebSocketMessage(event);
         });
         this.webSocket.on('close', function (event) {
-            isy.node.log('Websocket connection to ISY at ' + isy.address.toString() + ' CLOSED.  Will re-try in 2 seconds');
+            isy.node.log('Websocket connection to ISY at ' + isy.address.toString() + ' CLOSED.  Will re-try in 10 seconds');
+            isy.node.log('Websocket reason:' + event.reason + " code:" + event.code);
             isy.connected = false;
             isy.events.emit('websocket_closed');
             isy.webSocket = null;
-            isy.wsTimeout = setTimeout(function () { isy.initializeWebSocket() }, 2000);
+            isy.wsTimeout = setTimeout(function () { isy.initializeWebSocket() }, 10000);
         })
     }
 
@@ -451,12 +452,16 @@ var ISY = function (controller_node, address, username, password, useHttps) {
 
                     //Get ISY version number and check whether it supports node servers:
                     try {
-                        isy.ISYVersion = document.childNamed('app_full_version').val;
+			app_version = document.childNamed('app_version');
+			if (app_version == undefined) {
+			    app_version = document.childNamed('app_full_version')
+			}
+                        isy.ISYVersion = app_version.val;
 
                         //determine the number of node servers supported:
-                        var nodeServersSupported = (document.childNamed('nodedefs').val == 'true');
+			nodedefs = document.childNamed('nodedefs');
 
-                        if (!nodeServersSupported) {
+                        if (nodedefs == undefined || nodedefs.val != 'true') {
                             isy.nodeServersSupported = 0;
                         } else {
                             var regEx = /(\d+)\.(\d+)\.(\d+)(\w)?/gi;
